@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+Sitemap: https://your-site-name.netlify.app/sitemap.xml
+
+# SEO настройки
+Crawl-delay: 1
