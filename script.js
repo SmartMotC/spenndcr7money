@@ -210,6 +210,59 @@ function createReceiptSystem() {
         saveReceiptData();
     }
 
+    // Функция для добавления продажи в чек
+    function addSaleToReceipt(itemName, itemPrice, quantity = 1) {
+        const receiptItems = receiptContainer.querySelector('.receipt-items');
+        const totalSpentElement = receiptContainer.querySelector('.total-spent');
+        
+        // Нормализуем имя товара
+        const normalizedItemName = normalizeItemName(itemName);
+        
+        // Обновляем статистику
+        totalPurchases += 1;
+        totalItems -= quantity;
+        
+        // Проверяем, есть ли уже такой товар в чеке
+        const existingItemIndex = purchaseHistory.findIndex(item => item.name === normalizedItemName);
+        
+        if (existingItemIndex !== -1) {
+            // Обновляем существующий товар
+            const existingItem = purchaseHistory[existingItemIndex];
+            existingItem.quantity -= quantity;
+            existingItem.totalPrice -= itemPrice * quantity;
+            
+            // Если количество стало 0, удаляем товар из чека
+            if (existingItem.quantity <= 0) {
+                purchaseHistory.splice(existingItemIndex, 1);
+                const itemElement = receiptItems.querySelector(`[data-item="${normalizedItemName}"]`);
+                if (itemElement) {
+                    itemElement.remove();
+                }
+            } else {
+                // Обновляем отображение
+                const itemElement = receiptItems.querySelector(`[data-item="${normalizedItemName}"]`);
+                if (itemElement) {
+                    updateReceiptItemDisplay(itemElement, existingItem);
+                }
+            }
+            
+            // Обновляем общую сумму
+            totalSpent -= itemPrice * quantity;
+            totalSpentElement.textContent = formatMoney(totalSpent) + '$';
+            
+            // Если чек пуст, показываем сообщение
+            if (purchaseHistory.length === 0) {
+                receiptItems.innerHTML = '<div class="receipt-empty">Покупок пока нет</div>';
+            }
+            
+            // Обновляем статистику
+            updateStats();
+            
+            // Сохраняем в localStorage
+            saveReceiptData();
+        }
+    }
+
     // Функция очистки чека
     function clearReceipt() {
         const receiptItems = receiptContainer.querySelector('.receipt-items');
@@ -340,6 +393,7 @@ function createReceiptSystem() {
 
     return {
         addToReceipt,
+        addSaleToReceipt,
         clearReceipt,
         getTotalSpent: () => totalSpent,
         getTotalPurchases: () => totalPurchases,
@@ -348,7 +402,7 @@ function createReceiptSystem() {
     };
 }
 
-// Обновленная функция handlePurchase с добавлением в чек
+// Функция для обработки покупки
 function handlePurchase(price, moneyElement, quantityElement, itemName, receiptSystem, quantity = 1) {
     const currentMoney = parsePrice(moneyElement.textContent);
     const itemPrice = parsePrice(price);
@@ -391,6 +445,63 @@ function handlePurchase(price, moneyElement, quantityElement, itemName, receiptS
     }
 }
 
+// Функция для обработки продажи
+function handleSale(price, moneyElement, quantityElement, itemName, receiptSystem, quantity = 1) {
+    const currentMoney = parsePrice(moneyElement.textContent);
+    const itemPrice = parsePrice(price);
+    const totalGain = itemPrice * quantity;
+    
+    // Нормализуем имя товара
+    const normalizedItemName = normalizeItemName(itemName);
+    
+    // Проверяем, есть ли товары для продажи
+    const currentQuantity = parseInt(quantityElement.textContent);
+    
+    if (currentQuantity >= quantity) {
+        // Увеличиваем деньги
+        const newMoney = currentMoney + totalGain;
+        animateMoneyChange(currentMoney, newMoney, moneyElement);
+        
+        // Уменьшаем количество товаров
+        const newQuantity = currentQuantity - quantity;
+        quantityElement.textContent = newQuantity;
+        
+        // Добавляем анимацию к количеству
+        quantityElement.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            quantityElement.style.transform = 'scale(1)';
+        }, 300);
+        
+        // Добавляем продажу в чек
+        receiptSystem.addSaleToReceipt(normalizedItemName, itemPrice, quantity);
+        
+        // Сохраняем состояние игры
+        saveGameState(newMoney, normalizedItemName, newQuantity);
+        
+        return true;
+    } else {
+        alert(`Недостаточно товаров для продажи! У вас только ${currentQuantity} шт. ${itemName}`);
+        return false;
+    }
+}
+
+// Функция для обновления состояния кнопок продажи
+function updateSellButtons() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        const quantityElement = card.querySelector('.quantity');
+        const sellButton = card.querySelector('.sell-btn');
+        const currentQuantity = parseInt(quantityElement.textContent);
+        
+        // Отключаем кнопку продажи, если товаров нет
+        if (currentQuantity <= 0) {
+            sellButton.disabled = true;
+        } else {
+            sellButton.disabled = false;
+        }
+    });
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     // Создаем систему чека
@@ -398,6 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const moneyElement = document.querySelector('.money h2');
     const buyButtons = document.querySelectorAll('.buy-btn');
+    const sellButtons = document.querySelectorAll('.sell-btn');
     
     // Загружаем состояние игры
     const gameState = loadGameState();
@@ -414,6 +526,9 @@ document.addEventListener('DOMContentLoaded', function() {
         quantityElement.textContent = gameState.quantities[normalizedItemName] || 0;
     });
     
+    // Обновляем состояние кнопок продажи
+    updateSellButtons();
+    
     // Добавляем обработчики событий для всех кнопок "Купить"
     buyButtons.forEach(button => {
         button.addEventListener('click', function(event) {
@@ -428,10 +543,36 @@ document.addEventListener('DOMContentLoaded', function() {
             if (event.ctrlKey) quantity = 100;
             
             handlePurchase(priceElement.textContent, moneyElement, quantityElement, itemName, receiptSystem, quantity);
+            
+            // Обновляем состояние кнопок продажи
+            updateSellButtons();
         });
         
         // Добавляем подсказку о множественной покупке
         button.title = "Клик - купить 1 шт.\nShift+клик - купить 10 шт.\nCtrl+клик - купить 100 шт.";
+    });
+    
+    // Добавляем обработчики событий для всех кнопок "Продать"
+    sellButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            const card = this.closest('.card');
+            const priceElement = card.querySelector('.price');
+            const quantityElement = card.querySelector('.quantity');
+            const itemName = card.querySelector('h3').textContent;
+            
+            // Проверяем зажат ли Shift или Ctrl для продажи нескольких штук
+            let quantity = 1;
+            if (event.shiftKey) quantity = 10;
+            if (event.ctrlKey) quantity = 100;
+            
+            handleSale(priceElement.textContent, moneyElement, quantityElement, itemName, receiptSystem, quantity);
+            
+            // Обновляем состояние кнопок продажи
+            updateSellButtons();
+        });
+        
+        // Добавляем подсказку о множественной продаже
+        button.title = "Клик - продать 1 шт.\nShift+клик - продать 10 шт.\nCtrl+клик - продать 100 шт.";
     });
     
     // Добавляем кнопку сброса игры
