@@ -78,7 +78,7 @@ body {
 
 /* ===== ОБЩИЕ СТИЛИ ДЛЯ КАРТОЧЕК ===== */
 .card {
-    height: 380px;
+    height: 420px;
     background: white;
     border-radius: 15px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
@@ -155,26 +155,64 @@ body {
     box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
 }
 
+/* Контейнер для кнопок */
+.buttons-container {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    width: 100%;
+    justify-content: center;
+}
+
 /* Кнопки купить */
 .card .buy-btn {
     background: linear-gradient(135deg, #5de89e, #4bd85a);
     color: white;
     font-size: 16px;
     font-weight: 600;
-    padding: 10px 25px;
+    padding: 10px 20px;
     border: none;
     border-radius: 25px;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(93, 232, 158, 0.3);
-    margin: 5px 0;
-    min-width: 120px;
+    flex: 1;
+    max-width: 120px;
 }
 
 .card .buy-btn:hover {
     background: linear-gradient(135deg, #4bd88c, #3bc752);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(93, 232, 158, 0.4);
+}
+
+/* Кнопки продать */
+.card .sell-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    flex: 1;
+    max-width: 120px;
+}
+
+.card .sell-btn:hover {
+    background: linear-gradient(135deg, #ff5252, #e53935);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.card .sell-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* Количество товаров */
@@ -263,13 +301,29 @@ body {
 }
 
 @media (max-width: 768px) {
+    .feature-block {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        font-size: 24px;
+        margin: 30px auto;
+        padding: 20px;
+    }
+    
+    .feature-block2 {
+        font-size: 22px;
+        margin: 20px auto;
+        padding: 15px 20px;
+    }
+    
     .products-container {
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: 15px;
+        padding: 10px;
     }
     
     .card {
-        height: 350px;
+        height: 400px;
         padding: 15px;
     }
     
@@ -279,6 +333,51 @@ body {
     
     .card .price {
         font-size: 20px;
+    }
+    
+    .buttons-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .card .buy-btn,
+    .card .sell-btn {
+        max-width: 100%;
+        padding: 12px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .feature-block {
+        font-size: 20px;
+        margin: 20px auto;
+        padding: 15px;
+    }
+    
+    .feature-block2 {
+        font-size: 18px;
+        margin: 15px auto;
+        padding: 12px 15px;
+    }
+    
+    .products-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    .card {
+        height: 380px;
+    }
+    
+    .card h3 {
+        font-size: 16px;
+        min-height: 40px;
+    }
+    
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
     }
 }
 
@@ -516,7 +615,8 @@ body {
     75% { transform: translateX(5px); }
 }
 
-.card .buy-btn:active {
+.card .buy-btn:active,
+.card .sell-btn:active {
     transform: scale(0.95);
 }
 
@@ -539,4 +639,13 @@ body {
 .reset-button:hover {
     background: #c0392b;
     transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .reset-button {
+        bottom: 70px;
+        right: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
 }
